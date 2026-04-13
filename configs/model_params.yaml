@@ -1,0 +1,6 @@
+random_state: 42
+bootstrap_iterations: 1000
+threshold_steps: 100
+split_ratios:
+  test: 0.2
+  val: 0.25
