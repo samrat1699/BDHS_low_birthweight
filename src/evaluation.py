@@ -23,6 +23,11 @@ def calibration_intercept(y_true, p):
     lr.fit(logit, y_true)
     return lr.intercept_[0]
 
+def weighted_cm(y_true, p, w, t):
+    pred = (p >= t).astype(int)
+    tn, fp, fn, tp = confusion_matrix(y_true, pred, sample_weight=w).ravel()
+    return tp, fp, fn, tn
+
 def get_calibrated_probs(model, X_set, y_train_set, train_raw_probs):
     eps = 1e-6
     train_raw_probs = np.clip(train_raw_probs, eps, 1-eps)
