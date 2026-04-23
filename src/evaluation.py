@@ -38,6 +38,60 @@ def get_calibrated_probs(model, X_set, y_train_set, train_raw_probs):
     logit_set = np.log(raw_p / (1 - raw_p)).reshape(-1, 1)
     return calibrator.predict_proba(logit_set)[:, 1]
 
+def compute_midrank(x):
+    J = np.argsort(x)
+    Z = x[J]
+    n = len(x)
+    T = np.zeros(n)
+    i = 0
+    while i < n:
+        j = i
+        while j < n and Z[j] == Z[i]:
+            j += 1
+        T[i:j] = 0.5 * (i + j - 1)
+        i = j
+    T2 = np.empty(n)
+    T2[J] = T + 1
+    return T2
+
+def fast_delong(preds, label_1_count):
+    m = int(label_1_count)
+    n = preds.shape[1] - m
+    pos = preds[:, :m]
+    neg = preds[:, m:]
+    k = preds.shape[0]
+
+    tx = np.array([compute_midrank(pos[i]) for i in range(k)])
+    ty = np.array([compute_midrank(neg[i]) for i in range(k)])
+
+    aucs = (tx.sum(axis=1) / m - (m + 1) / 2) / n
+
+    v01 = (tx - tx.mean(axis=1, keepdims=True)) / n
+    v10 = (ty - ty.mean(axis=1, keepdims=True)) / m
+
+    sx = np.cov(v01)
+    sy = np.cov(v10)
+
+    return aucs, sx + sy
+
+def delong_test(y_true, pred1, pred2):
+    y_true = np.array(y_true)
+    order = np.argsort(-pred1)
+    y_true = y_true[order]
+    preds = np.vstack((pred1, pred2))[:, order]
+    label_1_count = np.sum(y_true)
+
+    aucs, cov = fast_delong(preds, label_1_count)
+
+    diff = aucs[0] - aucs[1]
+    var = cov[0,0] + cov[1,1] - 2 * cov[0,1]
+
+    z = diff / np.sqrt(var + 1e-12)
+    p = 2 * (1 - stats.norm.cdf(abs(z)))
+
+    return aucs[0], aucs[1], diff, z, p
+
+
 def evaluate_metrics(y_true, p, w, t):
     pred = (p >= t).astype(int)
     tn, fp, fn, tp = confusion_matrix(y_true, pred, sample_weight=w).ravel()
