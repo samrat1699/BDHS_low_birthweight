@@ -16,6 +16,13 @@ def calibration_slope(y_true, p):
     lr = LogisticRegression(fit_intercept=False).fit(logit, y_true)
     return lr.coef_[0][0]
 
+def calibration_intercept(y_true, p):
+    p = np.clip(p, 1e-6, 1-1e-6)
+    logit = np.log(p / (1 - p)).reshape(-1, 1)
+    lr = LogisticRegression(fit_intercept=True)
+    lr.fit(logit, y_true)
+    return lr.intercept_[0]
+
 def get_calibrated_probs(model, X_set, y_train_set, train_raw_probs):
     eps = 1e-6
     train_raw_probs = np.clip(train_raw_probs, eps, 1-eps)
