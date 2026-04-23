@@ -46,7 +46,8 @@ def main():
         master_results.append([f"{name} (Test)"]  + get_bootstrap_results(y_test, test_prob, w_test, best_t))
         plot_data[name] = test_prob
 
-    cols = ["Model/Set", "Acc", "AUC", "PR_AUC", "Kappa", "Precision", "Recall", "F1", "Brier", "Slope", "Sens", "Spec", "Thresh"]
+    cols = ["Model/Set", "Acc", "AUC", "PR_AUC", "Kappa", "Precision", "Recall", "F1", "Brier", "Slope", "Intercept","Sens", "Spec", "Thresh"]
+   
     print("\n" + "="*160 + "\nFINAL REPORT WITH 95% CIs\n" + "="*160)
     print(pd.DataFrame(master_results, columns=cols).to_string(index=False))
 
