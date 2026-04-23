@@ -47,13 +47,35 @@ def main():
         plot_data[name] = test_prob
 
     cols = ["Model/Set", "Acc", "AUC", "PR_AUC", "Kappa", "Precision", "Recall", "F1", "Brier", "Slope", "Intercept","Sens", "Spec", "Thresh"]
-   
     print("\n" + "="*160 + "\nFINAL REPORT WITH 95% CIs\n" + "="*160)
     print(pd.DataFrame(master_results, columns=cols).to_string(index=False))
+    model_names = list(plot_data.keys())
+
+    for i in range(len(model_names)):
+        for j in range(i+1, len(model_names)):
+    
+            m1, m2 = model_names[i], model_names[j]
+    
+            auc1, auc2, diff, p = delong_roc_test(
+                y_test.values,
+                plot_data[m1],
+                plot_data[m2]
+            )
+    
+            print(f"{m1} vs {m2}: "
+                  f"AUC1={auc1:.3f}, AUC2={auc2:.3f}, "
+                  f"Diff={diff:.3f}, p={p:.5f}")
+
 
     plot_roc_curves(y_test, w_test, plot_data)
     plot_calibration(y_test, plot_data)
     plot_pr_curves(y_test, plot_data)
+    plot_shap_combined(
+    model=xgb_model,
+    X=X_test,
+    feature_name_map=feature_map,
+    save_path="Figure_SHAP_Combined.png"
+)
 
 if __name__ == "__main__":
     main()
